@@ -7,11 +7,20 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        memory = [0] * 8
-        registers = [0] * 8
-        registers[5] = IM
-        registers[6] = IS
-        registers[7] = SP
+        
+
+        self.ram = [0] * 256
+        self.register = [0] * 8
+        self.PC = 0
+
+        # registers[5] = IM   <------- Maaaaaaybe?
+        # registers[6] = IS
+        # registers[7] = SP
+        IR = [0] * 8
+        MAR = [0] * 8
+        MDR = [0] * 8
+        FL = [0] * 8
+
 
     def load(self):
         """Load a program into memory."""
@@ -44,6 +53,12 @@ class CPU:
         else:
             raise Exception("Unsupported ALU operation")
 
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+
+    def ram_write(self, MDR, MAR):
+        self.ram[MAR] = MDR
+
     def trace(self):
         """
         Handy function to print out the CPU state. You might want to call this
@@ -66,4 +81,32 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        PRN = 0b01000111
+        HLT = 0b00000001
+        READ = 3
+        WRITE = 4
+        LDI = 0b10000010
+
+        running = True
+
+        while running:
+            IR = self.ram[self.PC]
+            
+            if IR == LDI:
+                operandA = self.ram_read(self.PC + 1)
+                operandB = self.ram_read(self.PC + 2)
+                self.register[operandA] = operandB
+                self.PC += 3
+
+            elif IR == PRN:
+                operandA = self.ram_read(self.PC + 1)
+                print(self.register[operandA])
+                self.PC += 2
+
+            elif IR == HLT:
+                running = False
+                self.PC += 1
+
+            else:
+                print(f"Unknown Instruction {IR}")
+                sys.exit(1)
