@@ -13,12 +13,9 @@ class CPU:
         self.register = [0] * 8
         self.PC = 0
 
-        # registers[5] = IM   <------- Maaaaaaybe?
-        # registers[6] = IS
-        # registers[7] = SP
-        IR = [0] * 8
-        MAR = [0] * 8
-        MDR = [0] * 8
+        # register[5] = IM   <------- Maaaaaaybe?
+        # register[6] = IS
+        # register[7] = SP
         FL = [0] * 8
 
 
@@ -29,15 +26,32 @@ class CPU:
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        program = []
+
+        
+
+        # if sys.argv[1] is None:
+        #     print("This file is bad.")  # for stretch
+        #     sys.exit(1)
+        try:
+            print("try try try trying")
+            with open(sys.argv[1]) as f:
+                print("Inside the file")
+                for line in f:
+                    # Process comments:
+                    # Ignore anything after a # symbol
+                    comment_split = line.split("#")
+                    # Convert any numbers from binary strings to integers
+                    num = comment_split[0]
+                    try:
+                        x = int(num, 2)
+                    except ValueError:
+                        continue
+                    # print in binary and decimal
+                    print(f"{x:08b}: {x:d}")
+                    program.append(x)
+        except ValueError:
+            print(f"File not found")
 
         for instruction in program:
             self.ram[address] = instruction
@@ -48,7 +62,7 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.register[reg_a] += self.register[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -66,16 +80,16 @@ class CPU:
         """
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.pc,
+            self.PC,
             #self.fl,
             #self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
+            self.ram_read(self.PC),
+            self.ram_read(self.PC + 1),
+            self.ram_read(self.PC + 2)
         ), end='')
 
         for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+            print(" %02X" % self.register[i], end='')
 
         print()
 
@@ -83,9 +97,9 @@ class CPU:
         """Run the CPU."""
         PRN = 0b01000111
         HLT = 0b00000001
-        READ = 3
-        WRITE = 4
         LDI = 0b10000010
+        MUL = 0b10100010
+
 
         running = True
 
@@ -106,6 +120,12 @@ class CPU:
             elif IR == HLT:
                 running = False
                 self.PC += 1
+
+            elif IR == MUL:
+                operandA = self.ram[self.PC + 1]
+                operandB = self.ram[self.PC + 2]
+                self.register[operandA] *= self.register[operandB]
+                self.PC += 3
 
             else:
                 print(f"Unknown Instruction {IR}")
