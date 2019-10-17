@@ -63,7 +63,12 @@ class CPU:
 
         if op == "ADD":
             self.register[reg_a] += self.register[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB":
+            self.register[reg_a] -= self.register[reg_b]
+        elif op == "MUL":
+            self.register[reg_a] *= self.register[reg_b]
+        elif op == "DIV":
+            self.register[reg_a] /= self.register[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -95,25 +100,30 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        PRN = 0b01000111
-        HLT = 0b00000001
-        LDI = 0b10000010
-        MUL = 0b10100010
+        PRN  = 0b01000111
+        HLT  = 0b00000001
+        LDI  = 0b10000010
+        MUL  = 0b10100010
+        MOD  = 0b10100100
+        ADD  = 0b10100000
+        SUB  = 0b10100001
+        DIV  = 0b10100011
+        PUSH = 0b01000101
+        POP  = 0b01000110
 
 
         running = True
 
         while running:
             IR = self.ram[self.PC]
+            operandA = self.ram_read(self.PC + 1)
+            operandB = self.ram_read(self.PC + 2)
             
             if IR == LDI:
-                operandA = self.ram_read(self.PC + 1)
-                operandB = self.ram_read(self.PC + 2)
                 self.register[operandA] = operandB
                 self.PC += 3
 
             elif IR == PRN:
-                operandA = self.ram_read(self.PC + 1)
                 print(self.register[operandA])
                 self.PC += 2
 
@@ -122,10 +132,28 @@ class CPU:
                 self.PC += 1
 
             elif IR == MUL:
-                operandA = self.ram[self.PC + 1]
-                operandB = self.ram[self.PC + 2]
-                self.register[operandA] *= self.register[operandB]
+                self.alu("MUL", operandA, operandB)
                 self.PC += 3
+
+            elif IR == DIV:
+                self.alu("DIV", operandA, operandB)
+                self.PC += 3
+
+            elif IR == ADD:
+                self.alu("ADD", operandA, operandB)
+                self.PC += 3
+
+            elif IR == SUB:
+                self.alu("SUB", operandA, operandB)
+                self.PC += 3
+
+            # elif IR = PUSH:
+            #     # Do a thing
+            #     self.PC += 2
+
+            # elif IR = POP:
+            #     # Do a thing
+            #     self.PC += 2
 
             else:
                 print(f"Unknown Instruction {IR}")
